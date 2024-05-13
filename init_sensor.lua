@@ -8,18 +8,19 @@ adcpin = 0 --A0為一類比轉數位轉換器
 adcdata = 0
 
 --watersensor1
-pin4 = 4 --gpio 02（MOTO_S）
+pin4 = 6 --gpio 02（MOTO_S）
 weatersensor2_state = 0 --狀態
 gpio.mode(pin4, gpio.INPUT)
-gpio.write(pin4, gpio.LOW)
+
 
 --watersensor2
-pin5 = 5 --gpio 14（BUZZER_S）
+pin5 = 7 --gpio 14（BUZZER_S）
 weatersensor3_state = 0 --狀態
 gpio.mode(pin5, gpio.INPUT)
 
+
 --dht22
-pin6 = 3 --D0
+pin6 = 5 --D0
 gpio.mode(pin6, gpio.INPUT)
 
 wifi.setmode(wifi.STATION)
@@ -91,7 +92,7 @@ end
     end)
   
    m:on("overflow", function(client, topic, mdata) end)   
-   m:connect("broker.emqx.io", 1883, false, function(client, reason)
+   m:connect("10.10.10.4", 1883, false, function(client, reason)
       print("MQTT_connected")
       --訂閱主題為："CheckID"
       client:subscribe({["watersensor"]=0,["PH"]=0,["TDS"]=0,["dht11"]=0,["ds18b20"]=0,["switch"]=0}, function(client) MQTTStimer:stop() print("subscribe success") end) --多訂閱
@@ -104,17 +105,16 @@ end
         if gpio.read(pin4) == 1 then
           client:publish("1", "111", 1, 1, function(client) end)
           print("watersensor1 is full.")
-        elseif gpio.read(pin4) == 0 then
+        else
           client:publish("1", "110", 1, 1, function(client) end)
           print("watersensor1 is not full.")
         end
         
         --watersensor2
-        water2status = gpio.read(pin5)
-        if water2status == 1 then
+        if gpio.read(pin5) == 1 then
           client:publish("1", "121", 1, 1, function(client) end)
           print("watersensor2 is full.")
-        elseif water2status == 0 then
+        else
           client:publish("1", "120", 1, 1, function(client) end)
           print("watersensor2 is not full.")
         end
@@ -133,16 +133,15 @@ end
         status, temp2, humi, temp_dec, humi_dec = dht.read(pin6)
         if status == dht.OK then
           client:publish("2", "0"..temp2.."", 1, 1, function(client) end)
-          client:publish("5", "0"..humi.."", 1, 1, function(client) end)
-          print("DHT22 Temperature:"..temp2.."")
+          print("DHT11 Temperature:"..temp2.."")
         end
         if status == dht.ERROR_CHECKSUM then
           client:publish("2", "2000", 1, 1, function(client) end)
-          print("DHT22 error")
+          print("DHT11 error")
         end
         if status == dht.ERROR_TIMEOUT then
           client:publish("2", "2999", 1, 1, function(client) end)
-          print("DHT22 timed out")
+          print("DHT11 timed out")
         end
       end)
    end,
